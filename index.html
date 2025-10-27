@@ -1,534 +1,664 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>은사점검 테스트</title>
-    <meta name="description" content="하나님이 주신 은사를 발견하는 테스트">
-    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>목회자 강점 차별화 워크숍</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    
+    /* 슬라이더 커스텀 스타일 */
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 5px;
+      background: linear-gradient(to right, #ddd 0%, #ddd 100%);
+      outline: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #4f46e5;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #4f46e5;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+  </style>
 </head>
 <body>
-    <div id="root"></div>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState, useEffect } = React;
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+    // 아이콘 컴포넌트들
+    const CheckCircle = ({ className }) => (
+      <svg className={className} fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+      </svg>
+    );
 
-        const SpiritualGiftTest = () => {
-          const [currentStep, setCurrentStep] = useState('intro');
-          const [scores, setScores] = useState({
-            affinity: Array(10).fill(0),
-            ability: Array(10).fill(0),
-            opportunity: Array(10).fill(0)
+    const Circle = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" strokeWidth="2" />
+      </svg>
+    );
+
+    const Trash2 = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+      </svg>
+    );
+
+    const Download = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+      </svg>
+    );
+
+    const AlertCircle = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    );
+
+    const Star = ({ filled, className }) => (
+      <svg className={className} fill={filled ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+      </svg>
+    );
+
+    const MinistryWorkshop = () => {
+      const [step, setStep] = useState(1);
+      const [tasks, setTasks] = useState([]);
+      const [newTask, setNewTask] = useState('');
+      const [selectedPortfolio, setSelectedPortfolio] = useState([]);
+
+      const addTask = () => {
+        if (newTask.trim() && tasks.length < 20) {
+          setTasks([...tasks, {
+            id: Date.now(),
+            text: newTask,
+            recognized: false,
+            preferenceScore: 5,
+            marketScore: 5
+          }]);
+          setNewTask('');
+        }
+      };
+
+      const toggleRecognized = (id) => {
+        setTasks(tasks.map(task => 
+          task.id === id ? { ...task, recognized: !task.recognized } : task
+        ));
+      };
+
+      const deleteTask = (id) => {
+        setTasks(tasks.filter(task => task.id !== id));
+        setSelectedPortfolio(selectedPortfolio.filter(taskId => taskId !== id));
+      };
+
+      const updatePreferenceScore = (id, score) => {
+        setTasks(tasks.map(task =>
+          task.id === id ? { ...task, preferenceScore: parseInt(score) } : task
+        ));
+      };
+
+      const updateMarketScore = (id, score) => {
+        setTasks(tasks.map(task =>
+          task.id === id ? { ...task, marketScore: parseInt(score) } : task
+        ));
+      };
+
+      // 점수를 순위로 변환
+      const calculateRanks = () => {
+        // 선호도 순위 (인정받은 것 우선, 그 다음 점수)
+        const sortedByPreference = [...tasks].sort((a, b) => {
+          if (a.recognized && !b.recognized) return -1;
+          if (!a.recognized && b.recognized) return 1;
+          return b.preferenceScore - a.preferenceScore;
+        });
+        
+        sortedByPreference.forEach((task, index) => {
+          task.preferenceRank = index + 1;
+        });
+
+        // 시장 순위 (점수 높은 순)
+        const sortedByMarket = [...tasks].sort((a, b) => b.marketScore - a.marketScore);
+        sortedByMarket.forEach((task, index) => {
+          task.marketRank = index + 1;
+        });
+
+        setTasks([...tasks]);
+      };
+
+      const goToAnalysis = () => {
+        calculateRanks();
+        setStep(6);
+      };
+
+      // 4분면 분석
+      const getQuadrant = (task) => {
+        if (!task.preferenceRank || !task.marketRank) return null;
+        
+        const prefMedian = tasks.length / 2;
+        const marketMedian = tasks.length / 2;
+        
+        if (task.preferenceRank <= prefMedian && task.marketRank <= marketMedian) return 1;
+        if (task.preferenceRank <= prefMedian && task.marketRank > marketMedian) return 2;
+        if (task.preferenceRank > prefMedian && task.marketRank > marketMedian) return 3;
+        if (task.preferenceRank > prefMedian && task.marketRank <= marketMedian) return 4;
+      };
+
+      const quadrantInfo = {
+        1: { name: '전략적 투자 영역', color: 'bg-green-100 border-green-500', emoji: '⭐', desc: '나와 시장 모두 중요 → 차별화 필살기 개발' },
+        2: { name: '다크호스 영역', color: 'bg-blue-100 border-blue-500', emoji: '🤔', desc: '나의 강점, 시장 수요 낮음 → 1개 선택하여 기회 탐색' },
+        3: { name: '정크 영역', color: 'bg-gray-100 border-gray-500', emoji: '🗑️', desc: '둘 다 낮음 → 과감히 제거하거나 최소 노력' },
+        4: { name: '스트레스 영역', color: 'bg-red-100 border-red-500', emoji: '🆘', desc: '시장 수요 높지만 역량 부족 → SOS 요청' }
+      };
+
+      const togglePortfolio = (taskId) => {
+        if (selectedPortfolio.includes(taskId)) {
+          setSelectedPortfolio(selectedPortfolio.filter(id => id !== taskId));
+        } else if (selectedPortfolio.length < 4) {
+          setSelectedPortfolio([...selectedPortfolio, taskId]);
+        }
+      };
+
+      const downloadResults = async () => {
+        // 포트폴리오 섹션 캡처
+        const element = document.getElementById('portfolio-section');
+        if (!element) return;
+        
+        try {
+          // html2canvas 라이브러리 동적 로드
+          if (!window.html2canvas) {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            document.head.appendChild(script);
+            await new Promise(resolve => script.onload = resolve);
+          }
+          
+          const canvas = await window.html2canvas(element, {
+            backgroundColor: '#ffffff',
+            scale: 2,
+            logging: false
           });
-
-          const giftTypes = [
-            { id: 1, name: '긍휼', desc: '어려움을 겪는 사람들에게 깊이 공감하고 위로하는 능력' },
-            { id: 2, name: '가르침', desc: '성경적 진리를 명확하게 설명하여 다른 사람을 교육하는 능력' },
-            { id: 3, name: '행정', desc: '조직이나 행사를 계획하고 효율적으로 관리하는 능력' },
-            { id: 4, name: '목양', desc: '사람들을 돌보고, 격려하며, 영적으로 성장하도록 돕는 능력' },
-            { id: 5, name: '창조적', desc: '예술(음악, 미술 등)을 통해 하나님을 예배하고 표현하는 능력' },
-            { id: 6, name: '구제', desc: '물질적 자원을 기쁘게 나누어 다른 사람을 돕는 능력' },
-            { id: 7, name: '선교', desc: '다른 문화권이나 환경에 적응하여 복음을 전하는 능력' },
-            { id: 8, name: '전도', desc: '비신자에게 복음을 명확하게 제시하여 결신을 돕는 능력' },
-            { id: 9, name: '분별', desc: '진리와 거짓, 선과 악을 영적으로 분별하는 능력' },
-            { id: 10, name: '지혜', desc: '복잡한 문제에 대한 실질적이고 효과적인 해결책을 제시하는 능력' }
-          ];
-
-          const questions = {
-            affinity: [
-              '어려움을 겪는 사람들의 이야기를 듣고, 그들의 아픔에 깊이 공감하는 것을 좋아한다.',
-              '성경 말씀을 깊이 연구하고, 그 진리를 다른 사람들에게 쉽게 설명해 주는 데 흥미가 있다.',
-              '교회 행사를 계획하고, 각 부서의 역할을 조율하는 등 전체 그림을 그리는 일을 즐긴다.',
-              '다른 사람들이 자신의 잠재력을 발견하고 성장하도록 돕는 데 큰 기쁨을 느낀다.',
-              '예술(음악, 미술, 글쓰기 등)을 통해 하나님을 표현하거나 예배 분위기를 조성하는 데 마음이 끌린다.',
-              '누군가의 필요를 발견하면, 물질적이든 실질적인 도움이든 망설이지 않고 기꺼이 돕는다.',
-              '전혀 새로운 환경이나 문화권에서 복음을 전하고 교회를 세우는 상상을 하곤 한다.',
-              '비신자 친구들에게 기독교에 대해 자연스럽게 이야기할 기회를 항상 찾는다.',
-              '영적으로 혼란스러워하는 사람들을 위해 진리와 거짓을 분별하고 올바른 길을 제시해 주고 싶다.',
-              '교회의 재정을 투명하게 관리하고, 자원을 효율적으로 사용하는 것에 관심이 많다.'
-            ],
-            ability: [
-              '당신의 위로와 격려를 통해 낙심했던 사람들이 다시 일어선 경험이 있다.',
-              '당신의 가르침을 들은 사람들이 성경적 진리를 더 잘 이해하고 삶에 적용하는 것을 보았다.',
-              '당신이 계획하고 조직한 행사가 성공적으로 잘 마무리되어 긍정적인 평가를 받은 적이 있다.',
-              '당신의 조언과 리더십을 통해 공동체의 목표가 성공적으로 달성된 경험이 있다.',
-              '당신이 만든 작품이나 음악이 예배 공동체에 깊은 영적 울림을 주었다.',
-              '당신이 베푼 물질적 도움이나 봉사를 통해 상대방의 실제적인 문제가 해결된 적이 있다.',
-              '낯선 사람들과 금방 친해지고, 그들이 편안함을 느끼도록 돕는 능력이 있다.',
-              '당신의 간증이나 복음 제시를 통해 비신자가 예수 그리스도를 영접한 경험이 있다.',
-              '영적인 문제가 발생했을 때, 당신의 통찰력으로 상황을 명확하게 파악하고 분별해냈다.',
-              '복잡한 문제를 간단하고 효과적인 해결책으로 정리하여 제시하는 데 능숙하다.'
-            ],
-            opportunity: [
-              '당신이 속한 소그룹에 마음의 어려움을 겪는 사람이 있어 위로가 필요하다.',
-              '교회에 새롭게 등록한 성도들을 양육하고 가르쳐줄 사람이 필요하다.',
-              '다음 세대를 위한 행사를 기획하고 운영할 팀원이 필요하다.',
-              '소그룹 리더나 봉사팀 팀장처럼, 사람들을 이끌어 줄 리더가 필요하다.',
-              '교회 예배나 찬양팀에서 창조적인 재능을 가진 사람을 찾고 있다.',
-              '교회 주변에 어려운 이웃을 돕는 구제 사역을 시작하려 한다.',
-              '해외 선교나 미전도 종족 사역에 동참할 사람을 찾고 있다.',
-              '교회에 아직 믿지 않는 가족이나 친구를 둔 성도들이 많다.',
-              '이단이나 잘못된 가르침에 대한 분별력을 길러줄 교육 프로그램이 필요하다.',
-              '교회 행정이나 재정 관리를 담당할 봉사자가 필요하다.'
-            ]
+          
+          // 이미지로 다운로드
+          canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '나의_강점_포트폴리오.png';
+            a.click();
+            URL.revokeObjectURL(url);
+          });
+          
+        } catch (error) {
+          // 폴백: JSON 다운로드
+          console.error('이미지 저장 실패:', error);
+          const results = {
+            tasks: tasks.map(task => ({
+              과제: task.text,
+              인정받음: task.recognized ? 'O' : 'X',
+              선호도순위: task.preferenceRank,
+              시장순위: task.marketRank,
+              분면: getQuadrant(task)
+            })),
+            portfolio: tasks.filter(t => selectedPortfolio.includes(t.id)).map(t => t.text)
           };
+          
+          const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = '강점분석결과.json';
+          a.click();
+        }
+      };
 
-          const handleScore = (category, index, score) => {
-            setScores(prev => ({
-              ...prev,
-              [category]: prev[category].map((s, i) => i === index ? score : s)
-            }));
-          };
+      const getTableData = () => {
+        return tasks.map(task => ({
+          ...task,
+          recognizedText: task.recognized ? '⭕' : '',
+        }));
+      };
 
-          const calculateTopGifts = (categoryScores) => {
-            return categoryScores
-              .map((score, index) => ({ giftId: index + 1, score }))
-              .sort((a, b) => b.score - a.score)
-              .slice(0, 3);
-          };
+      // 별점 렌더링
+      const renderStars = (score) => {
+        return (
+          <div className="flex gap-1">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => (
+              <Star
+                key={i}
+                filled={i <= score}
+                className={`w-4 h-4 ${i <= score ? 'text-yellow-400' : 'text-gray-300'}`}
+              />
+            ))}
+          </div>
+        );
+      };
 
-          const getResults = () => {
-            const topAffinity = calculateTopGifts(scores.affinity);
-            const topAbility = calculateTopGifts(scores.ability);
-            const topOpportunity = calculateTopGifts(scores.opportunity);
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-4 md:p-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+                목회자 강점 차별화 워크숍
+              </h1>
+              <p className="text-gray-600">직무 강점 분석 및 차별화 전략 수립</p>
+            </div>
 
-            // 각 은사별로 세 영역의 점수를 계산
-            const giftAnalysis = scores.affinity.map((_, i) => ({
-              giftId: i + 1,
-              name: giftTypes[i].name,
-              affinity: scores.affinity[i],
-              ability: scores.ability[i],
-              opportunity: scores.opportunity[i],
-              average: (scores.affinity[i] + scores.ability[i] + scores.opportunity[i]) / 3,
-              total: scores.affinity[i] + scores.ability[i] + scores.opportunity[i],
-              // 세 영역의 점수 편차 계산 (일치도)
-              consistency: Math.max(scores.affinity[i], scores.ability[i], scores.opportunity[i]) - 
-                          Math.min(scores.affinity[i], scores.ability[i], scores.opportunity[i])
-            }));
-
-            // 상위 3개에 모두 포함되는 은사 찾기
-            const topGiftIds = {
-              affinity: topAffinity.map(g => g.giftId),
-              ability: topAbility.map(g => g.giftId),
-              opportunity: topOpportunity.map(g => g.giftId)
-            };
-
-            // 세 영역 모두에서 상위 3개에 포함되는 은사
-            const matchingGifts = giftAnalysis
-              .filter(gift => 
-                topGiftIds.affinity.includes(gift.giftId) &&
-                topGiftIds.ability.includes(gift.giftId) &&
-                topGiftIds.opportunity.includes(gift.giftId)
-              )
-              .sort((a, b) => {
-                // 1순위: 평균 점수가 높을수록
-                // 2순위: 일치도가 높을수록 (편차가 작을수록)
-                if (Math.abs(b.average - a.average) > 0.3) {
-                  return b.average - a.average;
-                }
-                return a.consistency - b.consistency;
-              });
-
-            // 일치하지 않더라도 점수가 높고 일치도가 좋은 은사
-            const strongGifts = giftAnalysis
-              .filter(gift => 
-                gift.average >= 3.5 && // 평균 3.5점 이상
-                gift.consistency <= 1.5 && // 편차 1.5점 이하
-                !matchingGifts.find(m => m.giftId === gift.giftId) // 이미 매칭된 것 제외
-              )
-              .sort((a, b) => b.average - a.average);
-
-            return {
-              topAffinity,
-              topAbility,
-              topOpportunity,
-              matchingGifts,
-              strongGifts,
-              allGifts: giftAnalysis,
-              totalScores: scores.affinity.map((_, i) => ({
-                gift: giftTypes[i].name,
-                affinity: scores.affinity[i],
-                ability: scores.ability[i],
-                opportunity: scores.opportunity[i],
-                total: scores.affinity[i] + scores.ability[i] + scores.opportunity[i]
-              }))
-            };
-          };
-
-          const RadarChart = ({ data }) => {
-            const chartRef = useRef(null);
-            const chartInstance = useRef(null);
-
-            useEffect(() => {
-              if (chartRef.current) {
-                const ctx = chartRef.current.getContext('2d');
-                
-                if (chartInstance.current) {
-                  chartInstance.current.destroy();
-                }
-
-                chartInstance.current = new Chart(ctx, {
-                  type: 'radar',
-                  data: {
-                    labels: data.map(d => d.gift),
-                    datasets: [
-                      {
-                        label: '관심',
-                        data: data.map(d => d.affinity),
-                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                        borderColor: 'rgb(59, 130, 246)',
-                        borderWidth: 2
-                      },
-                      {
-                        label: '능력',
-                        data: data.map(d => d.ability),
-                        backgroundColor: 'rgba(139, 92, 246, 0.2)',
-                        borderColor: 'rgb(139, 92, 246)',
-                        borderWidth: 2
-                      },
-                      {
-                        label: '기회',
-                        data: data.map(d => d.opportunity),
-                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                        borderColor: 'rgb(245, 158, 11)',
-                        borderWidth: 2
-                      }
-                    ]
-                  },
-                  options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {
-                      r: {
-                        beginAtZero: true,
-                        max: 5,
-                        ticks: {
-                          stepSize: 1
-                        }
-                      }
-                    },
-                    plugins: {
-                      legend: {
-                        position: 'top',
-                      }
-                    }
-                  }
-                });
-              }
-
-              return () => {
-                if (chartInstance.current) {
-                  chartInstance.current.destroy();
-                }
-              };
-            }, [data]);
-
-            return <canvas ref={chartRef} />;
-          };
-
-          const renderIntro = () => (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-8">
-              <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-10">
-                <h1 className="text-3xl md:text-4xl font-bold text-center text-indigo-900 mb-6">
-                  은사점검 테스트
-                </h1>
-                <div className="space-y-4 text-gray-700 leading-relaxed">
-                  <p className="text-lg">
-                    이 테스트는 정답을 찾는 시험이 아닙니다. 당신의 내면에 있는 하나님이 주신 은사를 발견하고, 
-                    이를 통해 당신과 공동체가 함께 성장하는 기회를 찾기 위한 도구입니다.
-                  </p>
-                  <div className="bg-indigo-50 p-6 rounded-lg">
-                    <h3 className="font-bold text-xl mb-3 text-indigo-900">평가 기준</h3>
-                    <ul className="space-y-2">
-                      <li><strong>5</strong> = 항상, 확실히 그렇다</li>
-                      <li><strong>4</strong> = 대부분, 대체로 그렇다</li>
-                      <li><strong>3</strong> = 보통 그렇다</li>
-                      <li><strong>2</strong> = 때때로, 가끔 그렇다</li>
-                      <li><strong>1</strong> = 전혀, 절대로 그렇지 않다</li>
-                    </ul>
+            <div className="flex justify-center mb-8 gap-1 md:gap-2 flex-wrap">
+              {[
+                { num: 1, label: '과제입력' },
+                { num: 2, label: '인정표시' },
+                { num: 3, label: '선호도' },
+                { num: 4, label: '시장중요도' },
+                { num: 5, label: '분석' }
+              ].map(s => (
+                <div key={s.num} className="flex flex-col items-center">
+                  <div
+                    className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base ${
+                      step === s.num ? 'bg-indigo-600 text-white' : 'bg-gray-300 text-gray-600'
+                    }`}
+                  >
+                    {s.num}
                   </div>
-                  <div className="bg-blue-50 p-6 rounded-lg">
-                    <h3 className="font-bold text-xl mb-3 text-blue-900">세 가지 영역</h3>
-                    <ul className="space-y-2">
-                      <li><strong>관심(Affinity)</strong> - 당신의 마음은 어디에 끌리나요?</li>
-                      <li><strong>능력(Ability)</strong> - 당신의 재능은 무엇인가요?</li>
-                      <li><strong>기회(Opportunity)</strong> - 공동체의 필요는 무엇인가요?</li>
-                    </ul>
-                  </div>
+                  <span className="text-xs mt-1 text-gray-600">{s.label}</span>
                 </div>
-                <button 
-                  onClick={() => setCurrentStep('affinity')}
-                  className="w-full mt-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-lg text-lg transition duration-200"
+              ))}
+            </div>
+
+            {step === 1 && (
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold mb-2">Step 1: 과제(Task) 분해하기</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  지금까지 사역자로서 해왔던 일들을 15~20개의 구체적인 과제로 나눠 적어주세요.
+                </p>
+                
+                <div className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    value={newTask}
+                    onChange={(e) => setNewTask(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addTask()}
+                    placeholder="예: 주일 설교 준비, 청년부 상담..."
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <button
+                    onClick={addTask}
+                    disabled={tasks.length >= 20}
+                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300"
+                  >
+                    추가
+                  </button>
+                </div>
+
+                <div className="text-sm text-gray-600 mb-4">
+                  {tasks.length}/20 과제 (최소 15개 권장)
+                </div>
+
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {tasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg"
+                    >
+                      <span className="flex-1">{task.text}</span>
+                      <button
+                        onClick={() => deleteTask(task.id)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  className="w-full mt-4 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300"
+                  onClick={() => setStep(2)}
+                  disabled={tasks.length < 10}
                 >
-                  테스트 시작하기
+                  다음 단계로
                 </button>
               </div>
-            </div>
-          );
+            )}
 
-          const renderQuestions = (category, title, description) => {
-            const categoryScores = scores[category];
-            const progress = (categoryScores.filter(s => s > 0).length / 10) * 100;
-
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-8">
-                <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-10">
-                  <div className="mb-8">
-                    <h2 className="text-2xl md:text-3xl font-bold text-indigo-900 mb-2">{title}</h2>
-                    <p className="text-gray-600">{description}</p>
-                    <div className="mt-4 bg-gray-200 rounded-full h-3">
-                      <div 
-                        className="bg-indigo-600 h-3 rounded-full transition-all duration-300"
-                        style={{ width: `${progress}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-sm text-gray-500 mt-2">{Math.round(progress)}% 완료</p>
-                  </div>
-
-                  <div className="space-y-6">
-                    {questions[category].map((question, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4 md:p-6 hover:shadow-md transition">
-                        <p className="font-medium text-gray-800 mb-4">
-                          {index + 1}. {question}
-                        </p>
-                        <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                          {[1, 2, 3, 4, 5].map(score => (
-                            <button
-                              key={score}
-                              onClick={() => handleScore(category, index, score)}
-                              className={`w-12 h-12 rounded-full font-bold transition ${
-                                categoryScores[index] === score
-                                  ? 'bg-indigo-600 text-white scale-110'
-                                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-                              }`}
-                            >
-                              {score}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex flex-col md:flex-row gap-4 mt-8">
-                    {category !== 'affinity' && (
-                      <button
-                        onClick={() => {
-                          if (category === 'ability') setCurrentStep('affinity');
-                          else if (category === 'opportunity') setCurrentStep('ability');
-                        }}
-                        className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-4 px-6 rounded-lg transition"
-                      >
-                        이전
-                      </button>
-                    )}
-                    <button
-                      onClick={() => {
-                        if (category === 'affinity') setCurrentStep('ability');
-                        else if (category === 'ability') setCurrentStep('opportunity');
-                        else setCurrentStep('result');
-                      }}
-                      disabled={categoryScores.some(s => s === 0)}
-                      className={`flex-1 font-bold py-4 px-6 rounded-lg transition ${
-                        categoryScores.some(s => s === 0)
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+            {step === 2 && (
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold mb-2">Step 2: 인정받은 과제 표시하기</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  타인에게 '잘했다'고 진짜 인정받은 과제를 선택하세요. (립서비스 제외)
+                </p>
+                
+                <div className="space-y-2 max-h-96 overflow-y-auto mb-4">
+                  {tasks.map((task) => (
+                    <div
+                      key={task.id}
+                      onClick={() => toggleRecognized(task.id)}
+                      className={`flex items-center gap-3 p-4 rounded-lg cursor-pointer transition ${
+                        task.recognized
+                          ? 'bg-indigo-50 border-2 border-indigo-500'
+                          : 'bg-white border-2 border-gray-200'
                       }`}
                     >
-                      {category === 'opportunity' ? '결과 보기' : '다음'}
+                      {task.recognized ? (
+                        <CheckCircle className="w-6 h-6 text-indigo-600" />
+                      ) : (
+                        <Circle className="w-6 h-6 text-gray-400" />
+                      )}
+                      <span className="flex-1">{task.text}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="text-sm text-gray-600 mb-4">
+                  {tasks.filter(t => t.recognized).length}개 선택됨
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setStep(1)}
+                    className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                  >
+                    이전
+                  </button>
+                  <button
+                    onClick={() => setStep(3)}
+                    className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    다음 단계로
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold mb-2">Step 3: 선호도 점수 매기기</h2>
+                <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mt-3 mb-4 rounded">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-bold text-amber-900 mb-1">핵심 질문</p>
+                      <p className="text-sm text-amber-800">
+                        "이 일을 앞으로 <strong>5년 더 해도 토가 나오지 않을 것</strong> 같은가?"<br/>
+                        1점(좋아하지 않음) ~ 10점(매우 좋아함)으로 평가하세요.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4 max-h-[500px] overflow-y-auto mb-4">
+                  {tasks
+                    .sort((a, b) => {
+                      if (a.recognized && !b.recognized) return -1;
+                      if (!a.recognized && b.recognized) return 1;
+                      return 0;
+                    })
+                    .map((task) => (
+                    <div
+                      key={task.id}
+                      className={`p-4 rounded-lg border-2 ${
+                        task.recognized ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        {task.recognized && <CheckCircle className="w-5 h-5 text-indigo-600 flex-shrink-0" />}
+                        <span className="font-medium text-sm md:text-base">{task.text}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="range"
+                          min="1"
+                          max="10"
+                          value={task.preferenceScore}
+                          onChange={(e) => updatePreferenceScore(task.id, e.target.value)}
+                          className="flex-1"
+                          style={{
+                            background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${(task.preferenceScore - 1) * 11.11}%, #ddd ${(task.preferenceScore - 1) * 11.11}%, #ddd 100%)`
+                          }}
+                        />
+                        <span className="text-2xl font-bold text-indigo-600 w-12 text-center">
+                          {task.preferenceScore}
+                        </span>
+                      </div>
+                      
+                      <div className="mt-2">
+                        {renderStars(task.preferenceScore)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setStep(2)}
+                    className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                  >
+                    이전
+                  </button>
+                  <button
+                    onClick={() => setStep(4)}
+                    className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    다음 단계로
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold mb-2">Step 4: 시장/조직 중요도 점수 매기기</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  담임목사님, 또는 내가 개척할 교회의 성도들 관점에서 각 과제의 중요도를 평가하세요.<br/>
+                  1점(중요하지 않음) ~ 10점(매우 중요함)
+                </p>
+                
+                <div className="space-y-4 max-h-[500px] overflow-y-auto mb-4">
+                  {tasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className={`p-4 rounded-lg border-2 ${
+                        task.recognized ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        {task.recognized && <CheckCircle className="w-5 h-5 text-indigo-600 flex-shrink-0" />}
+                        <span className="font-medium text-sm md:text-base">{task.text}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="range"
+                          min="1"
+                          max="10"
+                          value={task.marketScore}
+                          onChange={(e) => updateMarketScore(task.id, e.target.value)}
+                          className="flex-1"
+                          style={{
+                            background: `linear-gradient(to right, #10b981 0%, #10b981 ${(task.marketScore - 1) * 11.11}%, #ddd ${(task.marketScore - 1) * 11.11}%, #ddd 100%)`
+                          }}
+                        />
+                        <span className="text-2xl font-bold text-green-600 w-12 text-center">
+                          {task.marketScore}
+                        </span>
+                      </div>
+                      
+                      <div className="mt-2">
+                        {renderStars(task.marketScore)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setStep(3)}
+                    className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                  >
+                    이전
+                  </button>
+                  <button
+                    onClick={goToAnalysis}
+                    className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    분석 결과 보기
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {step === 6 && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <h2 className="text-2xl font-bold mb-4">전체 과제 한눈에 보기</h2>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b-2 border-gray-300">
+                          <th className="p-2 text-left">과제명</th>
+                          <th className="p-2 text-center w-16">인정</th>
+                          <th className="p-2 text-center w-20">선호도</th>
+                          <th className="p-2 text-center w-20">시장</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {getTableData()
+                          .sort((a, b) => a.preferenceRank - b.preferenceRank)
+                          .map(task => (
+                          <tr key={task.id} className="border-b border-gray-200 hover:bg-gray-50">
+                            <td className="p-2">{task.text}</td>
+                            <td className="p-2 text-center text-lg">{task.recognizedText}</td>
+                            <td className="p-2 text-center">
+                              <div className="font-bold text-indigo-600">#{task.preferenceRank}</div>
+                              <div className="text-xs text-gray-500">({task.preferenceScore}점)</div>
+                            </td>
+                            <td className="p-2 text-center">
+                              <div className="font-bold text-green-600">#{task.marketRank}</div>
+                              <div className="text-xs text-gray-500">({task.marketScore}점)</div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-lg p-6" id="portfolio-section">
+                  <h2 className="text-2xl font-bold mb-2">강점 포트폴리오 구성</h2>
+                  <p className="text-sm text-gray-600 mb-4">
+                    ⭐전략적 투자, 🤔다크호스, 🆘스트레스 영역에서 최대 4개를 선택하세요.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    {[
+                      { quadrant: 1, position: '좌측 상단' },
+                      { quadrant: 2, position: '우측 상단' },
+                      { quadrant: 4, position: '좌측 하단' },
+                      { quadrant: 3, position: '우측 하단' }
+                    ].map(({ quadrant, position }) => {
+                      const quadrantTasks = tasks.filter(t => getQuadrant(t) === quadrant);
+                      const info = quadrantInfo[quadrant];
+                      
+                      return (
+                        <div key={quadrant} className={`p-4 rounded-lg border-2 ${info.color}`}>
+                          <h3 className="font-bold mb-2 flex items-center gap-2">
+                            <span className="text-2xl">{info.emoji}</span>
+                            <div>
+                              <div className="text-sm md:text-base">{info.name}</div>
+                              <div className="text-xs text-gray-500 font-normal">{position}</div>
+                            </div>
+                          </h3>
+                          <p className="text-xs text-gray-600 mb-3">{info.desc}</p>
+                          
+                          <div className="space-y-2">
+                            {quadrantTasks
+                              .sort((a, b) => a.preferenceRank - b.preferenceRank)
+                              .map(task => (
+                              <div
+                                key={task.id}
+                                onClick={() => quadrant !== 3 && togglePortfolio(task.id)}
+                                className={`p-2 rounded text-sm cursor-pointer transition ${
+                                  selectedPortfolio.includes(task.id)
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-white hover:bg-gray-50'
+                                } ${quadrant === 3 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                <div className="font-medium">{task.text}</div>
+                                <div className="text-xs mt-1 opacity-75">
+                                  선호도 #{task.preferenceRank} · 시장 #{task.marketRank}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="bg-indigo-50 p-4 rounded-lg mb-4">
+                    <h4 className="font-bold mb-2">선택된 포트폴리오 ({selectedPortfolio.length}/4)</h4>
+                    <div className="space-y-1">
+                      {tasks
+                        .filter(t => selectedPortfolio.includes(t.id))
+                        .map(task => (
+                          <div key={task.id} className="text-sm">
+                            • {task.text}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setStep(4)}
+                      className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                    >
+                      이전
+                    </button>
+                    <button
+                      onClick={downloadResults}
+                      className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      포트폴리오 이미지로 저장
                     </button>
                   </div>
                 </div>
               </div>
-            );
-          };
+            )}
+          </div>
+        </div>
+      );
+    };
 
-          const renderResults = () => {
-            const results = getResults();
-
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-8">
-                <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-10">
-                  <h2 className="text-3xl md:text-4xl font-bold text-center text-indigo-900 mb-8">
-                    테스트 결과
-                  </h2>
-
-                  {results.matchingGifts.length > 0 && (
-                    <div className="mb-8 p-6 bg-green-50 border-2 border-green-500 rounded-xl">
-                      <h3 className="text-2xl font-bold text-green-800 mb-4">
-                        🎯 당신의 핵심 은사 (세 영역 모두 상위권)
-                      </h3>
-                      <div className="space-y-3">
-                        {results.matchingGifts.map(gift => (
-                          <div key={gift.giftId} className="bg-white p-4 rounded-lg">
-                            <div className="flex justify-between items-start mb-2">
-                              <h4 className="font-bold text-xl text-green-700">{gift.name}</h4>
-                              <div className="text-sm text-gray-600">
-                                평균: <span className="font-bold text-green-700">{gift.average.toFixed(1)}점</span>
-                              </div>
-                            </div>
-                            <p className="text-gray-600 mb-2">{giftTypes[gift.giftId - 1].desc}</p>
-                            <div className="flex gap-4 text-sm">
-                              <span>관심: {gift.affinity}점</span>
-                              <span>능력: {gift.ability}점</span>
-                              <span>기회: {gift.opportunity}점</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {results.strongGifts.length > 0 && (
-                    <div className="mb-8 p-6 bg-blue-50 border-2 border-blue-400 rounded-xl">
-                      <h3 className="text-2xl font-bold text-blue-800 mb-4">
-                        💪 강한 은사 (높은 점수 + 좋은 일치도)
-                      </h3>
-                      <p className="text-sm text-blue-700 mb-4">
-                        세 영역 모두 상위권은 아니지만, 점수가 높고 일치도가 좋은 은사입니다.
-                      </p>
-                      <div className="space-y-3">
-                        {results.strongGifts.map(gift => (
-                          <div key={gift.giftId} className="bg-white p-4 rounded-lg">
-                            <div className="flex justify-between items-start mb-2">
-                              <h4 className="font-bold text-lg text-blue-700">{gift.name}</h4>
-                              <div className="text-sm text-gray-600">
-                                평균: <span className="font-bold text-blue-700">{gift.average.toFixed(1)}점</span>
-                              </div>
-                            </div>
-                            <p className="text-gray-600 mb-2">{giftTypes[gift.giftId - 1].desc}</p>
-                            <div className="flex gap-4 text-sm">
-                              <span>관심: {gift.affinity}점</span>
-                              <span>능력: {gift.ability}점</span>
-                              <span>기회: {gift.opportunity}점</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-blue-50 p-6 rounded-xl">
-                      <h3 className="text-xl font-bold text-blue-900 mb-4">관심 (Affinity)</h3>
-                      <div className="space-y-2">
-                        {results.topAffinity.map((item, index) => (
-                          <div key={index} className="bg-white p-3 rounded-lg">
-                            <div className="font-bold">{index + 1}. {giftTypes[item.giftId - 1].name}</div>
-                            <div className="text-sm text-gray-600">점수: {item.score}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="bg-purple-50 p-6 rounded-xl">
-                      <h3 className="text-xl font-bold text-purple-900 mb-4">능력 (Ability)</h3>
-                      <div className="space-y-2">
-                        {results.topAbility.map((item, index) => (
-                          <div key={index} className="bg-white p-3 rounded-lg">
-                            <div className="font-bold">{index + 1}. {giftTypes[item.giftId - 1].name}</div>
-                            <div className="text-sm text-gray-600">점수: {item.score}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="bg-orange-50 p-6 rounded-xl">
-                      <h3 className="text-xl font-bold text-orange-900 mb-4">기회 (Opportunity)</h3>
-                      <div className="space-y-2">
-                        {results.topOpportunity.map((item, index) => (
-                          <div key={index} className="bg-white p-3 rounded-lg">
-                            <div className="font-bold">{index + 1}. {giftTypes[item.giftId - 1].name}</div>
-                            <div className="text-sm text-gray-600">점수: {item.score}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 레이더 차트 */}
-                  <div className="mb-8 bg-white p-6 rounded-xl shadow">
-                    <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">전체 은사 프로필</h3>
-                    <div className="max-w-2xl mx-auto">
-                      <RadarChart data={results.totalScores} />
-                    </div>
-                  </div>
-
-                  <div className="bg-indigo-50 p-6 rounded-xl mb-8">
-                    <h3 className="text-2xl font-bold text-indigo-900 mb-4">결과 해석</h3>
-                    <div className="space-y-4 text-gray-700">
-                      <div className="bg-white p-4 rounded-lg">
-                        <h4 className="font-bold text-lg text-indigo-800 mb-2">🎯 핵심 은사란?</h4>
-                        <p>
-                          세 영역(관심, 능력, 기회)에서 <strong>모두 상위 3개에 포함</strong>되면서 
-                          <strong>점수가 높고 일치도가 좋은</strong> 은사입니다. 이것이 현재 당신이 
-                          가장 효과적으로 사용할 수 있는 은사입니다.
-                        </p>
-                      </div>
-                      
-                      <div className="bg-white p-4 rounded-lg">
-                        <h4 className="font-bold text-lg text-blue-800 mb-2">💪 강한 은사란?</h4>
-                        <p>
-                          상위 3개에는 모두 들지 않았지만, <strong>평균 3.5점 이상</strong>이면서 
-                          세 영역의 <strong>편차가 1.5점 이하</strong>인 은사입니다. 
-                          개발 가능성이 높은 은사입니다.
-                        </p>
-                      </div>
-
-                      <div className="bg-white p-4 rounded-lg">
-                        <h4 className="font-bold text-lg text-gray-800 mb-2">📊 점수 해석 가이드</h4>
-                        <ul className="list-disc list-inside space-y-2 ml-2">
-                          <li><strong>평균 4.0 이상:</strong> 매우 강한 은사</li>
-                          <li><strong>평균 3.0-4.0:</strong> 개발 가능한 은사</li>
-                          <li><strong>편차 1.0 이하:</strong> 매우 일치도가 높음</li>
-                          <li><strong>편차 1.0-2.0:</strong> 일치도 양호</li>
-                        </ul>
-                      </div>
-
-                      <div className="bg-white p-4 rounded-lg">
-                        <h4 className="font-bold text-lg text-orange-800 mb-2">🌱 불일치 상황 해석</h4>
-                        <ul className="list-disc list-inside space-y-2 ml-2">
-                          <li><strong>관심만 높은 경우:</strong> 배움과 훈련의 기회로 삼으세요</li>
-                          <li><strong>능력만 높은 경우:</strong> 섬김의 기회로 여기며 영적 동기를 구하세요</li>
-                          <li><strong>기회만 있는 경우:</strong> 새로운 도전과 성장의 기회입니다</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setCurrentStep('intro');
-                      setScores({
-                        affinity: Array(10).fill(0),
-                        ability: Array(10).fill(0),
-                        opportunity: Array(10).fill(0)
-                      });
-                    }}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-lg transition"
-                  >
-                    처음으로 돌아가기
-                  </button>
-                </div>
-              </div>
-            );
-          };
-
-          if (currentStep === 'intro') return renderIntro();
-          if (currentStep === 'affinity') return renderQuestions('affinity', '관심 (Affinity)', '당신의 마음은 어디에 끌리나요?');
-          if (currentStep === 'ability') return renderQuestions('ability', '능력 (Ability)', '당신의 재능은 무엇인가요?');
-          if (currentStep === 'opportunity') return renderQuestions('opportunity', '기회 (Opportunity)', '공동체의 필요는 무엇인가요?');
-          if (currentStep === 'result') return renderResults();
-        };
-
-        ReactDOM.render(<SpiritualGiftTest />, document.getElementById('root'));
-    </script>
+    ReactDOM.render(<MinistryWorkshop />, document.getElementById('root'));
+  </script>
 </body>
 </html>
