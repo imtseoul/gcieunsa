@@ -99,26 +99,59 @@
             const topAbility = calculateTopGifts(scores.ability);
             const topOpportunity = calculateTopGifts(scores.opportunity);
 
-            const allGiftIds = [
-              ...topAffinity.map(g => g.giftId),
-              ...topAbility.map(g => g.giftId),
-              ...topOpportunity.map(g => g.giftId)
-            ];
+            // 각 은사별로 세 영역의 점수를 계산
+            const giftAnalysis = scores.affinity.map((_, i) => ({
+              giftId: i + 1,
+              name: giftTypes[i].name,
+              affinity: scores.affinity[i],
+              ability: scores.ability[i],
+              opportunity: scores.opportunity[i],
+              average: (scores.affinity[i] + scores.ability[i] + scores.opportunity[i]) / 3,
+              total: scores.affinity[i] + scores.ability[i] + scores.opportunity[i],
+              // 세 영역의 점수 편차 계산 (일치도)
+              consistency: Math.max(scores.affinity[i], scores.ability[i], scores.opportunity[i]) - 
+                          Math.min(scores.affinity[i], scores.ability[i], scores.opportunity[i])
+            }));
 
-            const giftFrequency = {};
-            allGiftIds.forEach(id => {
-              giftFrequency[id] = (giftFrequency[id] || 0) + 1;
-            });
+            // 상위 3개에 모두 포함되는 은사 찾기
+            const topGiftIds = {
+              affinity: topAffinity.map(g => g.giftId),
+              ability: topAbility.map(g => g.giftId),
+              opportunity: topOpportunity.map(g => g.giftId)
+            };
 
-            const matchingGifts = Object.entries(giftFrequency)
-              .filter(([_, count]) => count === 3)
-              .map(([id]) => parseInt(id));
+            // 세 영역 모두에서 상위 3개에 포함되는 은사
+            const matchingGifts = giftAnalysis
+              .filter(gift => 
+                topGiftIds.affinity.includes(gift.giftId) &&
+                topGiftIds.ability.includes(gift.giftId) &&
+                topGiftIds.opportunity.includes(gift.giftId)
+              )
+              .sort((a, b) => {
+                // 1순위: 평균 점수가 높을수록
+                // 2순위: 일치도가 높을수록 (편차가 작을수록)
+                if (Math.abs(b.average - a.average) > 0.3) {
+                  return b.average - a.average;
+                }
+                return a.consistency - b.consistency;
+              });
+
+            // 일치하지 않더라도 점수가 높고 일치도가 좋은 은사
+            const strongGifts = giftAnalysis
+              .filter(gift => 
+                gift.average >= 3.5 && // 평균 3.5점 이상
+                gift.consistency <= 1.5 && // 편차 1.5점 이하
+                !matchingGifts.find(m => m.giftId === gift.giftId) // 이미 매칭된 것 제외
+              )
+              .sort((a, b) => b.average - a.average);
 
             return {
               topAffinity,
               topAbility,
               topOpportunity,
               matchingGifts,
+              strongGifts,
+              allGifts: giftAnalysis,
               totalScores: scores.affinity.map((_, i) => ({
                 gift: giftTypes[i].name,
                 affinity: scores.affinity[i],
@@ -330,18 +363,54 @@
                   {results.matchingGifts.length > 0 && (
                     <div className="mb-8 p-6 bg-green-50 border-2 border-green-500 rounded-xl">
                       <h3 className="text-2xl font-bold text-green-800 mb-4">
-                        🎯 완벽하게 일치하는 은사!
+                        🎯 당신의 핵심 은사 (세 영역 모두 상위권)
                       </h3>
                       <div className="space-y-3">
-                        {results.matchingGifts.map(giftId => {
-                          const gift = giftTypes[giftId - 1];
-                          return (
-                            <div key={giftId} className="bg-white p-4 rounded-lg">
+                        {results.matchingGifts.map(gift => (
+                          <div key={gift.giftId} className="bg-white p-4 rounded-lg">
+                            <div className="flex justify-between items-start mb-2">
                               <h4 className="font-bold text-xl text-green-700">{gift.name}</h4>
-                              <p className="text-gray-600">{gift.desc}</p>
+                              <div className="text-sm text-gray-600">
+                                평균: <span className="font-bold text-green-700">{gift.average.toFixed(1)}점</span>
+                              </div>
                             </div>
-                          );
-                        })}
+                            <p className="text-gray-600 mb-2">{giftTypes[gift.giftId - 1].desc}</p>
+                            <div className="flex gap-4 text-sm">
+                              <span>관심: {gift.affinity}점</span>
+                              <span>능력: {gift.ability}점</span>
+                              <span>기회: {gift.opportunity}점</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {results.strongGifts.length > 0 && (
+                    <div className="mb-8 p-6 bg-blue-50 border-2 border-blue-400 rounded-xl">
+                      <h3 className="text-2xl font-bold text-blue-800 mb-4">
+                        💪 강한 은사 (높은 점수 + 좋은 일치도)
+                      </h3>
+                      <p className="text-sm text-blue-700 mb-4">
+                        세 영역 모두 상위권은 아니지만, 점수가 높고 일치도가 좋은 은사입니다.
+                      </p>
+                      <div className="space-y-3">
+                        {results.strongGifts.map(gift => (
+                          <div key={gift.giftId} className="bg-white p-4 rounded-lg">
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className="font-bold text-lg text-blue-700">{gift.name}</h4>
+                              <div className="text-sm text-gray-600">
+                                평균: <span className="font-bold text-blue-700">{gift.average.toFixed(1)}점</span>
+                              </div>
+                            </div>
+                            <p className="text-gray-600 mb-2">{giftTypes[gift.giftId - 1].desc}</p>
+                            <div className="flex gap-4 text-sm">
+                              <span>관심: {gift.affinity}점</span>
+                              <span>능력: {gift.ability}점</span>
+                              <span>기회: {gift.opportunity}점</span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -395,19 +464,42 @@
                   <div className="bg-indigo-50 p-6 rounded-xl mb-8">
                     <h3 className="text-2xl font-bold text-indigo-900 mb-4">결과 해석</h3>
                     <div className="space-y-4 text-gray-700">
-                      <p>
-                        세 영역(관심, 능력, 기회)이 모두 일치하는 은사가 있다면, 이것이 현재 당신이 
-                        가장 효과적으로 사용할 수 있는 은사입니다.
-                      </p>
-                      <p>
-                        일치하지 않는 경우에도 괜찮습니다. 각 영역의 상위 은사들을 통해 당신의 
-                        영적 여정과 성장 방향을 발견할 수 있습니다.
-                      </p>
-                      <ul className="list-disc list-inside space-y-2 ml-4">
-                        <li><strong>관심만 높은 경우:</strong> 배움과 훈련의 기회로 삼으세요</li>
-                        <li><strong>능력만 높은 경우:</strong> 섬김의 기회로 여기며 영적 동기를 구하세요</li>
-                        <li><strong>기회만 있는 경우:</strong> 새로운 도전과 성장의 기회입니다</li>
-                      </ul>
+                      <div className="bg-white p-4 rounded-lg">
+                        <h4 className="font-bold text-lg text-indigo-800 mb-2">🎯 핵심 은사란?</h4>
+                        <p>
+                          세 영역(관심, 능력, 기회)에서 <strong>모두 상위 3개에 포함</strong>되면서 
+                          <strong>점수가 높고 일치도가 좋은</strong> 은사입니다. 이것이 현재 당신이 
+                          가장 효과적으로 사용할 수 있는 은사입니다.
+                        </p>
+                      </div>
+                      
+                      <div className="bg-white p-4 rounded-lg">
+                        <h4 className="font-bold text-lg text-blue-800 mb-2">💪 강한 은사란?</h4>
+                        <p>
+                          상위 3개에는 모두 들지 않았지만, <strong>평균 3.5점 이상</strong>이면서 
+                          세 영역의 <strong>편차가 1.5점 이하</strong>인 은사입니다. 
+                          개발 가능성이 높은 은사입니다.
+                        </p>
+                      </div>
+
+                      <div className="bg-white p-4 rounded-lg">
+                        <h4 className="font-bold text-lg text-gray-800 mb-2">📊 점수 해석 가이드</h4>
+                        <ul className="list-disc list-inside space-y-2 ml-2">
+                          <li><strong>평균 4.0 이상:</strong> 매우 강한 은사</li>
+                          <li><strong>평균 3.0-4.0:</strong> 개발 가능한 은사</li>
+                          <li><strong>편차 1.0 이하:</strong> 매우 일치도가 높음</li>
+                          <li><strong>편차 1.0-2.0:</strong> 일치도 양호</li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-white p-4 rounded-lg">
+                        <h4 className="font-bold text-lg text-orange-800 mb-2">🌱 불일치 상황 해석</h4>
+                        <ul className="list-disc list-inside space-y-2 ml-2">
+                          <li><strong>관심만 높은 경우:</strong> 배움과 훈련의 기회로 삼으세요</li>
+                          <li><strong>능력만 높은 경우:</strong> 섬김의 기회로 여기며 영적 동기를 구하세요</li>
+                          <li><strong>기회만 있는 경우:</strong> 새로운 도전과 성장의 기회입니다</li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
 
