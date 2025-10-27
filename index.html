@@ -8,6 +8,7 @@
     <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
@@ -17,7 +18,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect, useRef } = React;
 
         const SpiritualGiftTest = () => {
           const [currentStep, setCurrentStep] = useState('intro');
@@ -126,6 +127,77 @@
                 total: scores.affinity[i] + scores.ability[i] + scores.opportunity[i]
               }))
             };
+          };
+
+          const RadarChart = ({ data }) => {
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+
+            useEffect(() => {
+              if (chartRef.current) {
+                const ctx = chartRef.current.getContext('2d');
+                
+                if (chartInstance.current) {
+                  chartInstance.current.destroy();
+                }
+
+                chartInstance.current = new Chart(ctx, {
+                  type: 'radar',
+                  data: {
+                    labels: data.map(d => d.gift),
+                    datasets: [
+                      {
+                        label: '관심',
+                        data: data.map(d => d.affinity),
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgb(59, 130, 246)',
+                        borderWidth: 2
+                      },
+                      {
+                        label: '능력',
+                        data: data.map(d => d.ability),
+                        backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                        borderColor: 'rgb(139, 92, 246)',
+                        borderWidth: 2
+                      },
+                      {
+                        label: '기회',
+                        data: data.map(d => d.opportunity),
+                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        borderColor: 'rgb(245, 158, 11)',
+                        borderWidth: 2
+                      }
+                    ]
+                  },
+                  options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                      r: {
+                        beginAtZero: true,
+                        max: 5,
+                        ticks: {
+                          stepSize: 1
+                        }
+                      }
+                    },
+                    plugins: {
+                      legend: {
+                        position: 'top',
+                      }
+                    }
+                  }
+                });
+              }
+
+              return () => {
+                if (chartInstance.current) {
+                  chartInstance.current.destroy();
+                }
+              };
+            }, [data]);
+
+            return <canvas ref={chartRef} />;
           };
 
           const renderIntro = () => (
@@ -312,31 +384,12 @@
                     </div>
                   </div>
 
-                  {/* 전체 점수 표 */}
-                  <div className="mb-8 overflow-x-auto">
-                    <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">전체 은사 점수</h3>
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="bg-indigo-100">
-                          <th className="border border-gray-300 p-3 text-left">은사</th>
-                          <th className="border border-gray-300 p-3 text-center">관심</th>
-                          <th className="border border-gray-300 p-3 text-center">능력</th>
-                          <th className="border border-gray-300 p-3 text-center">기회</th>
-                          <th className="border border-gray-300 p-3 text-center bg-indigo-200">합계</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {results.totalScores.sort((a, b) => b.total - a.total).map((item, index) => (
-                          <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                            <td className="border border-gray-300 p-3 font-bold">{item.gift}</td>
-                            <td className="border border-gray-300 p-3 text-center">{item.affinity}</td>
-                            <td className="border border-gray-300 p-3 text-center">{item.ability}</td>
-                            <td className="border border-gray-300 p-3 text-center">{item.opportunity}</td>
-                            <td className="border border-gray-300 p-3 text-center font-bold bg-indigo-50">{item.total}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  {/* 레이더 차트 */}
+                  <div className="mb-8 bg-white p-6 rounded-xl shadow">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">전체 은사 프로필</h3>
+                    <div className="max-w-2xl mx-auto">
+                      <RadarChart data={results.totalScores} />
+                    </div>
                   </div>
 
                   <div className="bg-indigo-50 p-6 rounded-xl mb-8">
